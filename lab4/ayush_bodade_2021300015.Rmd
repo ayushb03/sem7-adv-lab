@@ -1,0 +1,205 @@
+# load data [<https://www.kaggle.com/datasets/ahsen1330/us-police-shootings>]
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+crime_data <- read.csv("./police_shootings.csv")
+```
+
+# bar chart
+
+### \>=90 criminals were shot, only a minuscule number were shot and tased
+
+```{r}
+library(ggplot2)
+library(scales)
+library(RColorBrewer)
+
+ggplot(crime_data, aes(x = manner_of_death)) +
+  geom_bar(aes(fill = manner_of_death), color = "white", show.legend = FALSE, width = 0.7) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_y_continuous(expand = c(0, 0), labels = comma) +
+  labs(
+    title = "Frequency of Manner of Death",
+    subtitle = "Distribution Across Different Categories",
+    x = "Manner of Death",
+    y = "Count"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5, margin = margin(10, 0, 10, 0)),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, margin = margin(5, 0, 10, 0)),
+    axis.title.x = element_text(face = "bold", size = 14, margin = margin(10, 0, 10, 0)),
+    axis.title.y = element_text(face = "bold", size = 14, margin = margin(0, 10, 0, 10)),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.y = element_line(size = 0.5, color = "grey80"),
+    panel.grid.major.x = element_blank()
+  ) +
+  coord_cartesian(clip = "off")
+```
+
+# pie chart with top 10 armed statuses and a side legend
+
+### more than 60% of breakdowns had guns, followed by knife, while machete & taeser weren't that prominent
+
+```{r}
+armed_data_top10 <- crime_data %>%
+  count(armed) %>%
+  arrange(desc(n)) %>%
+  top_n(10, n) %>%
+  mutate(percentage = n / sum(n) * 100,
+         label = paste0(armed, "\n", round(percentage, 1), "%"))
+
+ggplot(armed_data_top10, aes(x = "", y = percentage, fill = armed)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar(theta = "y", start = 0) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Top 10 Breakdown by Armed Status",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5, margin = margin(10, 0, 10, 0)),
+    plot.background = element_rect(fill = "grey98", color = NA),
+    panel.background = element_blank(),
+    legend.position = "right",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 12)
+  )
+```
+
+# histogram plot
+
+### age of the victims follow a left skewed normal distribution, with the majority having aging between : 28-35
+
+```{r}
+library(ggplot2)
+
+ggplot(crime_data, aes(x=age)) +
+  geom_histogram(bins=30, fill="tomato", color="black", alpha=0.7) +
+  labs(title="Age Distribution of Victims",
+       subtitle="A visual representation of victim ages",
+       x="Age",
+       y="Frequency") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size=20, face="bold", color="darkred"),
+    plot.subtitle = element_text(size=14, face="italic", color="darkred"),
+    axis.title.x = element_text(size=14, face="bold", color="black"),
+    axis.title.y = element_text(size=14, face="bold", color="black"),
+    axis.text = element_text(size=12, color="black"),
+    panel.grid.major = element_line(color="gray90"),
+    panel.grid.minor = element_line(color="gray95")
+  ) +
+  scale_x_continuous(breaks=seq(0, 100, by=10)) +
+  scale_y_continuous(expand=c(0, 0))
+```
+
+# timeline chart
+
+### there has been a slight increase in the number of incidents over the past 7 years, but largely remains the same
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(scales)
+
+crime_data$date <- as.Date(crime_data$date)
+
+crime_summary <- crime_data %>%
+  group_by(date) %>%
+  summarise(incidents = n())
+
+ggplot(crime_summary, aes(x=date, y=incidents)) +
+  geom_line(color="green", size=1.2) +
+  scale_x_date(
+    breaks = seq(from = min(crime_summary$date), 
+                 to = max(crime_summary$date), 
+                 by = "3 months"),
+    date_labels = "%b %Y"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(title="Incidents Over Time",
+       x="Date",
+       y="Number of Incidents") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size=16, face="bold", hjust=0.5),
+    axis.title = element_text(size=12, face="bold"),
+    axis.text.x = element_text(size=10, angle=45, hjust=1),
+    axis.text.y = element_text(size=10),
+    panel.grid.major = element_line(color="grey80"),
+    panel.grid.minor = element_line(color="grey90"),
+    plot.background = element_rect(fill="white"),
+    panel.background = element_rect(fill="white")
+  ) +
+  geom_smooth(method = "loess", color = "blue", size = 1, se = FALSE)
+```
+
+# scatter plot
+
+### in most cases we see that the victim was attacked, followed by other methods
+
+```{r}
+library(ggplot2)
+library(RColorBrewer)
+
+ggplot(crime_data, aes(x=age, y=threat_level)) +
+  geom_point(aes(color=threat_level), alpha=0.7, size=3) +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    title="Age vs. Threat Level",
+    x="Age",
+    y="Threat Level",
+    color="Threat Level"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size=16, face="bold", hjust=0.5),
+    axis.title = element_text(size=12, face="bold"),
+    axis.text = element_text(size=10),
+    legend.title = element_text(size=12, face="bold"),
+    legend.text = element_text(size=10),
+    panel.grid.major = element_line(color="grey80"),
+    panel.grid.minor = element_line(color="grey90"),
+    plot.background = element_rect(fill="white"),
+    panel.background = element_rect(fill="white")
+  )
+
+```
+
+# bubble plot of geographic distribution
+
+### incidents with older victims seem to be prominent in the states of Atlanta, southern Nevada, and western California, so it is preferred to find another state to live in like: Wyoming, Dakota, Maine, Idho etc...
+
+```{r}
+library(ggplot2)
+library(RColorBrewer)
+
+ggplot(crime_data, aes(x=longitude, y=latitude, size=age, color=age)) +
+  geom_point(alpha=0.6, show.legend = TRUE) +
+  scale_size_continuous(range = c(3, 15), name="Age") +
+  scale_color_gradient(low = "blue", high = "red") +
+  labs(
+    title="Geographic Distribution of Incidents",
+    x="Longitude",
+    y="Latitude",
+    color="Age",
+    size="Age"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size=16, face="bold", hjust=0.5), 
+    axis.title = element_text(size=12, face="bold"), 
+    axis.text = element_text(size=10), 
+    legend.title = element_text(size=12, face="bold"), 
+    legend.text = element_text(size=10), 
+    panel.grid.major = element_line(color="grey80"), 
+    panel.grid.minor = element_line(color="grey90"), 
+    plot.background = element_rect(fill="white"), 
+    panel.background = element_rect(fill="white")
+  )
+```
