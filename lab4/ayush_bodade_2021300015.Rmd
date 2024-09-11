@@ -9,7 +9,7 @@ crime_data <- read.csv("./police_shootings.csv")
 
 # bar chart
 
-### \>=90 criminals were shot, only a minuscule number were shot and tased
+### \>=90 victims were shot, only a minuscule number were shot and tased
 
 ```{r}
 library(ggplot2)
